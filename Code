@@ -1,0 +1,187 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+struct student {
+    int roll;
+    char name[50];
+    float marks;
+};
+
+void addStudent();
+void displayStudents();
+void searchStudent();
+void updateStudent();
+void deleteStudent();
+
+int main() {
+    int choice;
+
+    do {
+        printf("\n===== STUDENT MANAGEMENT SYSTEM =====");
+        printf("\n1. Add Student");
+        printf("\n2. Display All Students");
+        printf("\n3. Search Student");
+        printf("\n4. Update Student");
+        printf("\n5. Delete Student");
+        printf("\n6. Exit");
+        printf("\nEnter your choice: ");
+        scanf("%d", &choice);
+
+        switch (choice) {
+            case 1: addStudent(); break;
+            case 2: displayStudents(); break;
+            case 3: searchStudent(); break;
+            case 4: updateStudent(); break;
+            case 5: deleteStudent(); break;
+            case 6: exit(0);
+            default: printf("\nInvalid choice!");
+        }
+    } while (choice != 6);
+
+    return 0;
+}
+
+void addStudent() {
+    FILE *fp;
+    struct student s;
+
+    fp = fopen("students.dat", "ab");
+    if (fp == NULL) {
+        printf("File error!");
+        return;
+    }
+
+    printf("\nEnter Roll Number: ");
+    scanf("%d", &s.roll);
+    printf("Enter Name: ");
+    scanf(" %[^\n]", s.name);
+    printf("Enter Marks: ");
+    scanf("%f", &s.marks);
+
+    fwrite(&s, sizeof(s), 1, fp);
+    fclose(fp);
+
+    printf("\nStudent record added successfully!");
+}
+
+void displayStudents() {
+    FILE *fp;
+    struct student s;
+
+    fp = fopen("students.dat", "rb");
+    if (fp == NULL) {
+        printf("\nNo records found!");
+        return;
+    }
+
+    printf("\n--- Student Records ---\n");
+    while (fread(&s, sizeof(s), 1, fp)) {
+        printf("\nRoll: %d", s.roll);
+        printf("\nName: %s", s.name);
+        printf("\nMarks: %.2f\n", s.marks);
+    }
+    fclose(fp);
+}
+
+void searchStudent() {
+    FILE *fp;
+    struct student s;
+    int roll, found = 0;
+
+    fp = fopen("students.dat", "rb");
+    if (fp == NULL) {
+        printf("\nFile not found!");
+        return;
+    }
+
+    printf("\nEnter Roll Number to search: ");
+    scanf("%d", &roll);
+
+    while (fread(&s, sizeof(s), 1, fp)) {
+        if (s.roll == roll) {
+            printf("\nRecord Found!");
+            printf("\nName: %s", s.name);
+            printf("\nMarks: %.2f", s.marks);
+            found = 1;
+            break;
+        }
+    }
+
+    if (!found)
+        printf("\nStudent not found!");
+
+    fclose(fp);
+}
+
+void updateStudent() {
+    FILE *fp;
+    struct student s;
+    int roll, found = 0;
+
+    fp = fopen("students.dat", "rb+");
+    if (fp == NULL) {
+        printf("\nFile error!");
+        return;
+    }
+
+    printf("\nEnter Roll Number to update: ");
+    scanf("%d", &roll);
+
+    while (fread(&s, sizeof(s), 1, fp)) {
+        if (s.roll == roll) {
+            printf("\nEnter New Name: ");
+            scanf(" %[^\n]", s.name);
+            printf("Enter New Marks: ");
+            scanf("%f", &s.marks);
+
+            fseek(fp, -sizeof(s), SEEK_CUR);
+            fwrite(&s, sizeof(s), 1, fp);
+            found = 1;
+            break;
+        }
+    }
+
+    if (!found)
+        printf("\nStudent not found!");
+    else
+        printf("\nRecord updated successfully!");
+
+    fclose(fp);
+}
+
+void deleteStudent() {
+    FILE *fp, *temp;
+    struct student s;
+    int roll, found = 0;
+
+    fp = fopen("students.dat", "rb");
+    temp = fopen("temp.dat", "wb");
+
+    if (fp == NULL || temp == NULL) {
+        printf("\nFile error!");
+        return;
+    }
+
+    printf("\nEnter Roll Number to delete: ");
+    scanf("%d", &roll);
+
+    while (fread(&s, sizeof(s), 1, fp)) {
+        if (s.roll != roll) {
+            fwrite(&s, sizeof(s), 1, temp);
+        } else {
+            found = 1;
+        }
+    }
+
+    fclose(fp);
+    fclose(temp);
+
+    remove("students.dat");
+    rename("temp.dat", "students.dat");
+
+    if (found)
+        printf("\nRecord deleted successfully!");
+    else
+        printf("\nStudent not found!");
+}
